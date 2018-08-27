@@ -21,18 +21,36 @@ float friction = 0.1;
 int gameMode = 0;
 
 class Ball {
-    int x = 64;
-    int y = 32;
-
     float inertiaX = 0;
     float inertiaY = 0;
 
   public:
+    int x = 64;
+    int y = 32;
 
     void updatePosition(int accX, int accY) {
       inertiaX -= (accX / gravity);
       inertiaY -= (accY / gravity);
 
+      applyFriction();
+      movement();
+    }
+
+    void draw() {
+      display.fillCircle(x, y, 5, WHITE);
+    }
+
+    void reinitialize() {
+      inertiaX = 0;
+      inertiaY = 0;
+
+      x = 64;
+      y = 32;
+    }
+
+  private:
+
+    void applyFriction() {
       if (inertiaX > 0) {
         inertiaX -= friction;
       } else {
@@ -44,13 +62,11 @@ class Ball {
       } else {
         inertiaY += friction;
       }
-
-      x += inertiaX;
-      y += inertiaY;
     }
 
-    void draw() {
-      display.fillCircle(x, y, 5, WHITE);
+    void movement() {
+      x += inertiaX;
+      y += inertiaY;
     }
 };
 
@@ -79,11 +95,10 @@ void loop() {
       display.println("ShakeIT to begin");
 
       detectShake();
+
       break;
     case 1:
-      display.setTextSize(2);
-      display.setTextColor(WHITE);
-      display.setCursor(0, 25);
+
 
       // ici, notre accéléromètre a une rotation de 90 degrés par rapport a notre écran.
       // Donc, l'axe y de l'accélérometre correspond a l'axe x de l'écran
@@ -96,15 +111,23 @@ void loop() {
       ball.updatePosition(AcY, AcX);
       ball.draw();
 
+      if (onEdge()) {
+        gameOver();
+      }
+
       break;
     case 2:
-
+      display.setTextSize(2);
+      display.setTextColor(WHITE);
+      display.setCursor(0, 25);
+      display.println("Game Over");
+      
+      detectShake();
+      
       break;
   }
 
   display.display();
-
-
 }
 
 void getAccData() {
@@ -137,3 +160,13 @@ void detectShake() {
     gameMode = 1;
   }
 }
+
+bool onEdge() {
+  return ball.x < 0 || ball.x > 128 || ball.y < 0 || ball.y > 64;
+}
+
+void gameOver() {
+  ball.reinitialize();
+  gameMode = 2;
+}
+
