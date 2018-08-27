@@ -11,11 +11,37 @@ Adafruit_SSD1306 display(4);
 const int MPU_addr = 0x68;
 int16_t AcX, AcY, AcZ, Tmp, GyX, GyY, GyZ;
 
+float gravity = 18000.0;
+
 // game modes:
 // 0: start
 // 1: jeu
 // 2: dead
 int gameMode = 0;
+
+class Ball {
+    int x = 64;
+    int y = 32;
+
+    float inertiaX = 0;
+    float inertiaY = 0;
+
+  public:
+
+    void updatePosition(int accX, int accY) {
+      inertiaX -= (accX / gravity);
+      inertiaY -= (accY / gravity);
+
+      x += inertiaX;
+      y += inertiaY;
+    }
+
+    void draw() {
+      display.fillCircle(x, y, 5, WHITE);
+    }
+};
+
+Ball ball;
 
 void setup() {
   Wire.begin();
@@ -31,6 +57,7 @@ void setup() {
 
 void loop() {
   display.clearDisplay();
+  getAccData();
   switch (gameMode) {
     case 0:
       display.setTextSize(2);
@@ -44,7 +71,18 @@ void loop() {
       display.setTextSize(2);
       display.setTextColor(WHITE);
       display.setCursor(0, 25);
-      display.println("GAME");
+
+      // ici, notre accéléromètre a une rotation de 90 degrés par rapport a notre écran.
+      // Donc, l'axe y de l'accélérometre correspond a l'axe x de l'écran
+
+      // gauche: y+
+      // droite: y-
+      // haut:   x+
+      // bas:    x-
+
+      ball.updatePosition(AcY, AcX);
+      ball.draw();
+
       break;
     case 2:
 
@@ -54,6 +92,9 @@ void loop() {
   display.display();
 
 
+}
+
+void getAccData() {
   Wire.beginTransmission(MPU_addr);
   Wire.write(0x3B);  // starting with register 0x3B (ACCEL_XOUT_H)
   Wire.endTransmission(false);
@@ -74,8 +115,6 @@ void loop() {
   Serial.print(" ");
 
   Serial.println(AcZ);
-
-
 }
 
 void detectShake() {
