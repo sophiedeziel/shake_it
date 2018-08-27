@@ -12,6 +12,7 @@ const int MPU_addr = 0x68;
 int16_t AcX, AcY, AcZ, Tmp, GyX, GyY, GyZ;
 
 float gravity = 18000.0;
+float friction = 0.1;
 
 // game modes:
 // 0: start
@@ -31,6 +32,18 @@ class Ball {
     void updatePosition(int accX, int accY) {
       inertiaX -= (accX / gravity);
       inertiaY -= (accY / gravity);
+
+      if (inertiaX > 0) {
+        inertiaX -= friction;
+      } else {
+        inertiaX += friction;
+      }
+
+      if (inertiaY > 0) {
+        inertiaY -= friction;
+      } else {
+        inertiaY += friction;
+      }
 
       x += inertiaX;
       y += inertiaY;
