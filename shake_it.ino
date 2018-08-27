@@ -1,6 +1,7 @@
 #include <Wire.h>
 #include <Adafruit_GFX.h>
 #include <Adafruit_SSD1306.h>
+#include "ball.h"
 
 #if (SSD1306_LCDHEIGHT != 64)
 #error("Height incorrect, please fix Adafruit_SSD1306.h!");
@@ -11,8 +12,6 @@ Adafruit_SSD1306 display(4);
 const int MPU_addr = 0x68;
 int16_t AcX, AcY, AcZ, Tmp, GyX, GyY, GyZ;
 
-float gravity = 18000.0;
-float friction = 0.1;
 
 // game modes:
 // 0: start
@@ -20,55 +19,7 @@ float friction = 0.1;
 // 2: dead
 int gameMode = 0;
 
-class Ball {
-    float inertiaX = 0;
-    float inertiaY = 0;
 
-  public:
-    int x = 64;
-    int y = 32;
-
-    void updatePosition(int accX, int accY) {
-      inertiaX -= (accX / gravity);
-      inertiaY -= (accY / gravity);
-
-      applyFriction();
-      movement();
-    }
-
-    void draw() {
-      display.fillCircle(x, y, 5, WHITE);
-    }
-
-    void reinitialize() {
-      inertiaX = 0;
-      inertiaY = 0;
-
-      x = 64;
-      y = 32;
-    }
-
-  private:
-
-    void applyFriction() {
-      if (inertiaX > 0) {
-        inertiaX -= friction;
-      } else {
-        inertiaX += friction;
-      }
-
-      if (inertiaY > 0) {
-        inertiaY -= friction;
-      } else {
-        inertiaY += friction;
-      }
-    }
-
-    void movement() {
-      x += inertiaX;
-      y += inertiaY;
-    }
-};
 
 Ball ball;
 
@@ -87,6 +38,7 @@ void setup() {
 void loop() {
   display.clearDisplay();
   getAccData();
+
   switch (gameMode) {
     case 0:
       display.setTextSize(2);
@@ -98,8 +50,6 @@ void loop() {
 
       break;
     case 1:
-
-
       // ici, notre accéléromètre a une rotation de 90 degrés par rapport a notre écran.
       // Donc, l'axe y de l'accélérometre correspond a l'axe x de l'écran
 
@@ -109,21 +59,23 @@ void loop() {
       // bas:    x-
 
       ball.updatePosition(AcY, AcX);
-      ball.draw();
+
+      display.fillCircle(ball.x, ball.y, 5, WHITE);
 
       if (onEdge()) {
         gameOver();
       }
 
       break;
+
     case 2:
       display.setTextSize(2);
       display.setTextColor(WHITE);
       display.setCursor(0, 25);
       display.println("Game Over");
-      
+
       detectShake();
-      
+
       break;
   }
 
